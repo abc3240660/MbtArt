@@ -49,6 +49,30 @@ static void PowerOffBG96Module(void)
     GPIOx_Output(BANKB, 9, 0);// release to default SI2302 HIGH
 }
 
+void SwitchToLowClock(void)
+{
+    _GIE = 0;
+    __builtin_write_OSCCONH(5);// LPRC
+    __builtin_write_OSCCONL(1);// 32MHz change to 32KHz
+    while(OSCCONbits.OSWEN);
+    _GIE = 1;
+}
+
+void SwitchToNormalClock(void)
+{
+    _GIE = 0;
+    __builtin_write_OSCCONH(1);// FRCPLL
+    __builtin_write_OSCCONL(1);// 32KHz change to 32MHz
+    while(OSCCONbits.OSWEN);
+    _GIE = 1;
+}
+
+void EnterToSleep(void)
+{
+    Sleep();
+    Nop();
+}
+
 int main(void)
 {
     float cur_pitch = 0;
@@ -71,124 +95,60 @@ int main(void)
 
     System_Config();
 
+#if 0    
+    // Close power consumption
+    Beep_Init();
+    CLRC663_PowerOff();
+    PowerOffBG96Module();
+
+    // Enter into sleep
+    delay_ms_nop(100);
+    ExtIntr2_Enable();
+    SwitchToLowClock();
+    EnterToSleep();
+
+    // TypeC intr will wake up sleep
+    ExtIntr2_Disable();
+    SwitchToNormalClock();
+#endif
+
     Uart1_Init();
+    DEBUG("ART Application running...\r\n");
+
 	Uart3_Init();
     Uart4_Init();
 
     delay_ms_nop(100);
-    
-    DEBUG("ART Application running...\r\n");
-
-#if 0// TypeC Check
-    while (1) {
-        if (Charge_InsertDetect()) {
-            break;
-        }
-
-        delay_ms_nop(2000);
-    }
-#endif
-
-#if 0// WDT Wakeup Test
-	if (_SWR) {
-        DEBUG("default _SWR = 1\r\n");
-    } else {
-        DEBUG("default _SWR = 0\r\n");
-    }
-
-	if (_POR) {
-        DEBUG("default _POR = 1\r\n");
-    } else {
-        DEBUG("default _POR = 0\r\n");
-    }
-
-    if (_WDTO) {
-        DEBUG("default _WDTO = 1\r\n");
-    } else {
-        DEBUG("default _WDTO = 0\r\n");
-    }
-    
-    if (_SLEEP) {
-        DEBUG("default _SLEEP = 1\r\n");
-    } else {
-        DEBUG("default _SLEEP = 0\r\n");
-    }
-
-    _SWDTEN = 1;// wait 8.192s
-
-    while (1) {
-        DEBUG("before sleep...\r\n");
-
-        Sleep();
-        Nop();
-
-        // Sleeping Mode -> Trigger WDT Wake Up
-        if (_WDTO) {
-            _WDTO = 0;
-
-            DEBUG("System wake up by WDT...\r\n");
-
-            if (_SLEEP) {
-                _SLEEP = 0;
-                DEBUG("WDT wake up from sleep Mode...\r\n");
-            }
-        }
-
-        DEBUG("after sleep...\r\n");
-        delay_ms_nop(2000);
-        
-        // Running Mode -> Trigger WDT Reset
-        if (try_cnt++ >= 10) {
-            DEBUG("Time to Trigger WDT Reset...\r\n");
-            delay_ms_nop(8000);
-            delay_ms_nop(8000);
-        }
-    }
-#endif
 
     // If TypeC-Power detect, beep*1
     g_ring_times = 1;
-    Configure_Tick1_10ms();
-    Configure_Tick2_10ms();
+    Configure_Tick1();// 1ms
+    Configure_Tick2();// 50ms
+    delay_ms_nop(31);
 
-    Beep_Init();
-    PowerOffBG96Module();
-
+#if 1
     LEDs_Init();
     Charge_Init();
     LB1938_Init();
     LockSwitch_Init();
 
     CLRC663_PowerUp();
+#endif
+
     BNO055_PowerUp();
-    
-#if 0// CLRC663 LOOP Testing
-    while(1) {
-        nfc_ret = ReadMobibNFCCard();
-        if (0 == nfc_ret) {
-            g_ring_times = 2;
-        }
 
-        // read_iso14443A_nfc_card();
+#if 0// Orange
+    SetLedsMode(MAIN_LED_O, LED_BLINK);
+    SetLedsStatus(MAIN_LED_O, LED_ON);
+#endif
 
-        if (0 == nfc_ret) {
-            LEDs_AllON();
-        }
-        delay_ms(1000);
-
-        if (0 == nfc_ret) {
-            LEDs_AllOff();
-        }
-        delay_ms(1000);
-
-        if (try_cnt++ >= 5) {
-            break;
-        }
-    }
+#if 0// Purple
+    SetLedsMode(MAIN_LED_P, LED_BLINK);
+    SetLedsStatus(MAIN_LED_P, LED_ON);
 #endif
 
 #if 1// BNO055 Testing
-    delay_ms(4000);
+    delay_ms(2000);
 	BNO055_init();
 	if (0 == bno055_get_euler(&cur_pitch, &cur_yaw, &cur_roll)) {
 		DEBUG("Euler Base: %f %f %f\n", (double)cur_pitch, (double)cur_yaw, (double)cur_roll);
@@ -248,7 +208,7 @@ int main(void)
         // --
         if (1 == nfc_enable) {
             if (0 == start_time_nfc) {
-                printf("start_time_nfc ...\n");
+                DEBUG("start_time_nfc ...\n");
                 g_ring_times = 6;
                 Enable_Tick2();
                 SetLedsStatus(MAIN_LED_B, LED_ON);
@@ -258,7 +218,7 @@ int main(void)
             if (start_time_nfc != 0) {
                 if (isDelayTimeout(start_time_nfc,nfc_time*1000UL)) {
                     nfc_enable = 0;
-                    printf("nfc_enable = 0\n");
+                    DEBUG("nfc_enable = 0\n");
                     SetLedsStatus(MAIN_LED_B, LED_OFF);
                 }
             }
@@ -280,7 +240,7 @@ int main(void)
         // --
         if (0 == (task_cnt%11)) {  // every 0.5s
             if (nfc_enable) {
-                printf("before ReadMobibNFCCard\n");
+                DEBUG("before ReadMobibNFCCard\n");
                 if (ReadMobibNFCCard()) {
                     g_ring_times = 6;
                     Enable_Tick2();
@@ -296,7 +256,7 @@ int main(void)
                     g_led_times = 6;
                     SetLedsStatus(MAIN_LED_R, LED_ON);
                 }
-                printf("after ReadMobibNFCCard\n");
+                DEBUG("after ReadMobibNFCCard\n");
             }
         }
 
@@ -317,6 +277,8 @@ int main(void)
                 if (!nfc_enable) {
                     if (intr_type&0x80) {
                         bno055_mode = 1;// During Low Power Mode
+
+                        Disable_Tick1();
                         Disable_Tick2();
 
                         DEBUG("Enter low power %s\n", TESTVER);
@@ -335,8 +297,6 @@ int main(void)
                             PMD7 = 0xFF;
                             PMD8 = 0xFF;
     #endif
-                            // Disable_Tick1();
-
                             _GIE = 0;
                             __builtin_write_OSCCONH(5);// LPRC
                             __builtin_write_OSCCONL(1);// 32MHz change to 32KHz
@@ -356,12 +316,12 @@ int main(void)
                             while(OSCCONbits.OSWEN);
                             _GIE = 1;
 
-                            // Enable_Tick1();
                             DEBUG("Wake Up...\r\n");
                         } else {
                             DEBUG("Intr happen again...\n");
                         }
 
+                        Enable_Tick1();
                         Enable_Tick2();
     #else
                         if (0 == GetBNOIntrFlag()) {

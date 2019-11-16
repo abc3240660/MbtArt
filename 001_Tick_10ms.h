@@ -16,13 +16,16 @@
 
 #include "015_Common.h"
 
-void Configure_Tick1_10ms(void);
-void Configure_Tick2_10ms(void);
+void Configure_Tick1(void);
+void Configure_Tick2(void);
+void Configure_Tick3(void);
 
-void Enable_Tick2(void);
-void Disable_Tick2(void);
 void Enable_Tick1(void);
 void Disable_Tick1(void);
+void Enable_Tick2(void);
+void Disable_Tick2(void);
+void Enable_Tick3(void);
+void Disable_Tick3(void);
 
 void delay_ms_nop(u32 cnt);
 void delay_us_nop(u32 cnt);

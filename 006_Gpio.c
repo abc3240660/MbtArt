@@ -15,7 +15,7 @@
 #include "001_Tick_10ms.h"
 #include "006_Gpio.h"
 
-#define LED_DEBUG	1
+// #define LED_DEBUG	1
 
 u8 gs_leds_sta = 0;
 
@@ -232,6 +232,7 @@ void LEDs_Init(void)
     GPIOx_Config(BANKD, MAIN_LED_R, OUTPUT_DIR);
     GPIOx_Config(BANKD, MAIN_LED_G, OUTPUT_DIR);
 
+#ifdef LED_DEBUG
     // Green LED ON to indicate powerup
     GPIOx_Output(BANKD, MAIN_LED_G, 1);
     delay_ms_nop(10);
@@ -240,6 +241,7 @@ void LEDs_Init(void)
     GPIOx_Output(BANKD, MAIN_LED_B, 0);
     GPIOx_Output(BANKD, MAIN_LED_R, 0);
     GPIOx_Output(BANKD, MAIN_LED_G, 0);
+#endif
 }
 
 // PORTx: just for read
@@ -359,6 +361,38 @@ void InOutPurpose_Init(void)
     TRISG &= 0xFF81;// Direction:0-OUT 1-IN
 }
 
+void ExtIntr2_Enable(void)
+{
+    GPIOx_Pull(BANKF, 2, PULL_UP);
+    GPIOx_Config(BANKF, 2, INPUT_DIR);
+
+    _INT2R = 30;// RF2->EXT_INT:INT2
+
+    _INT2IP = IPL_MID;
+    _INT2IF = 0;// Clear INT Flag
+    _INT2EP = 1;// Fall Edge
+    _INT2IE = 1;// Enable INT1 Interrupt
+}
+
+void ExtIntr2_Enable_RD1(void)
+{
+    GPIOx_Pull(BANKD, 1, PULL_UP);
+    GPIOx_Config(BANKD, 1, INPUT_DIR);
+
+    _INT2R = 24;// RD1->EXT_INT:INT2
+
+    _INT2IP = IPL_MID;
+    _INT2IF = 0;// Clear INT Flag
+    _INT2EP = 0;// Rise Edge
+    _INT2IE = 1;// Enable INT1 Interrupt
+}
+
+void ExtIntr2_Disable(void)
+{
+    _INT2IF = 0;// Clear INT Flag
+    _INT2IE = 0;// Enable INT1 Interrupt
+}
+
 void Charge_Init(void)
 {
     // Charge Status
@@ -377,12 +411,12 @@ void Charge_Disable(void)
 
 u8 Charge_InsertDetect(void)
 {
-    if (GPIOx_Input(BANKF, 2)) {
-        printf("Charge Status = 0\n");
-        return 0;// normal mode
-    } else {
-        printf("Charge Status = 1\n");
+    if (!GPIOx_Input(BANKF, 2)) {
+        printf("Charge Status Level = 0 -> Charging Mode...\n");
         return 1;// charging mode
+    } else {
+        printf("Charge Status Level = 1 -> Normal Mode...\n");
+        return 0;// normal mode
     }
 }
 
@@ -394,18 +428,50 @@ u8 GetLedsStatus(LED_INDEX led_id)
 void SetLedsStatus(LED_INDEX led_id, LED_STA led_sta)
 {
     if (LED_ON == led_sta) {
-        gs_leds_sta |= (1<<led_id);
+        if (MAIN_LED_P == led_id) {
+            gs_leds_sta |= (1<<MAIN_LED_R);
+            gs_leds_sta |= (1<<MAIN_LED_B);
+        } else if (MAIN_LED_O == led_id) {
+            gs_leds_sta |= (1<<MAIN_LED_R);
+            gs_leds_sta |= (1<<MAIN_LED_G);
+        } else {
+            gs_leds_sta |= (1<<led_id);
+        }
     } else {
-        gs_leds_sta &= ~(1<<led_id);
+        if (MAIN_LED_P == led_id) {
+            gs_leds_sta &= ~(1<<MAIN_LED_R);
+            gs_leds_sta &= ~(1<<MAIN_LED_B);
+        } else if (MAIN_LED_O == led_id) {
+            gs_leds_sta &= ~(1<<MAIN_LED_R);
+            gs_leds_sta &= ~(1<<MAIN_LED_G);
+        } else {
+            gs_leds_sta &= ~(1<<led_id);
+        }
     }
 }
 
 void SetLedsMode(LED_INDEX led_id, LED_MOD led_mod)
 {
     if (LED_BLINK == led_mod) {
-        gs_leds_mod |= (1<<led_id);
+        if (MAIN_LED_P == led_id) {
+            gs_leds_mod |= (1<<MAIN_LED_R);
+            gs_leds_mod |= (1<<MAIN_LED_B);
+        } else if (MAIN_LED_O == led_id) {
+            gs_leds_mod |= (1<<MAIN_LED_R);
+            gs_leds_mod |= (1<<MAIN_LED_G);
+        } else {
+            gs_leds_mod |= (1<<led_id);
+        }
     } else {
-        gs_leds_mod &= ~(1<<led_id);
+        if (MAIN_LED_P == led_id) {
+            gs_leds_mod &= ~(1<<MAIN_LED_R);
+            gs_leds_mod &= ~(1<<MAIN_LED_B);
+        } else if (MAIN_LED_O == led_id) {
+            gs_leds_mod &= ~(1<<MAIN_LED_R);
+            gs_leds_mod &= ~(1<<MAIN_LED_G);
+        } else {
+            gs_leds_mod &= ~(1<<led_id);
+        }
     }
 }
 

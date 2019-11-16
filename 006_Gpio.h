@@ -26,6 +26,8 @@ typedef enum {
     MAIN_LED_B,
     MAIN_LED_R,
     MAIN_LED_G,
+    MAIN_LED_O,// Orange
+    MAIN_LED_P,// Purple
 } LED_INDEX;
 
 typedef enum {
@@ -81,6 +83,9 @@ void LockSwitch_Init(void);
 void Charge_Init(void);
 void Charge_Disable(void);
 u8 Charge_InsertDetect(void);
+
+void ExtIntr2_Enable(void);
+void ExtIntr2_Disable(void);
 
 #ifdef __cplusplus
 }

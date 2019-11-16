@@ -48,10 +48,15 @@ void __attribute__ ( ( interrupt, no_auto_psv ) ) _INT1Interrupt(void)
     IFS1bits.INT1IF = 0;// Clear INT Flag
 }
 
+void __attribute__ ( ( interrupt, no_auto_psv ) ) _INT2Interrupt(void)
+{
+    IFS1bits.INT2IF = 0;// Clear INT Flag
+}
+
 void ExtIntr_Initialize(void)
 {
     _TRISD0 = 1;
-    RPINR0bits.INT1R = 0x00B;// RD0->EXT_INT:INT1
+    RPINR0bits.INT1R = 11;// RD0->EXT_INT:INT1
 
     IPC5bits.INT1IP = IPL_MID;
     IFS1bits.INT1IF = 0;// Clear INT Flag
@@ -61,7 +66,7 @@ void ExtIntr_Initialize(void)
 
 void bno_055_delay_ms(u32 ms)
 {
-    delay_ms((u16)(ms)*2);
+    delay_ms_nop((u16)(ms)*2);
 }
 
 void bno055_send_chars(u8 *data, int len)
@@ -1076,9 +1081,9 @@ void BNO055_PowerUp(void)
     GPIOx_Config(BANKC, 14, OUTPUT_DIR);// BNO055
     GPIOx_Output(BANKC, 14, 1);// nTILT_BOOT_LOAD
    
-    delay_ms(2000);
+    delay_ms_nop(100);
     GPIOx_Output(BANKC, 13, 0);// nTILT_RST
-    delay_ms(2000);
+    delay_ms_nop(100);
     GPIOx_Output(BANKC, 13, 1);// nTILT_RST
 }
 

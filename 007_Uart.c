@@ -33,10 +33,10 @@ extern int rx_debug_flag;
 void Uart1_Init(void)
 {
     _RP22R = 3;// RD3
-    _U1RXR = 24;// RD1
+//    _U1RXR = 24;// RD1
 
     _LATD3 = 1;
-    _TRISD1 = 1;
+//    _TRISD1 = 1;
     _TRISD3 = 0;
 
     U1MODE = 0x8808;
