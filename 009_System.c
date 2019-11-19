@@ -42,12 +42,23 @@
 #pragma config FCKSM = CSDCMD           // Clock Switching Mode bits (Both Clock switching and Fail-safe Clock Monitor are disabled)
 #else
 // FOSCSEL
+#ifdef EXT_CRYSTAL
+#pragma config FNOSC = PRIPLL    //Oscillator Source Selection->Primary Oscillator (XT, HS, EC)
+#pragma config PLLMODE = PLL96DIV5    //PLL Mode Selection->No PLL used; PLLEN bit is not available
+#else
 #pragma config FNOSC = FRCPLL    //Oscillator Source Selection->Primary Oscillator (XT, HS, EC)
 #pragma config PLLMODE = PLL96DIV2    //PLL Mode Selection->No PLL used; PLLEN bit is not available
+#endif
+
 #pragma config IESO = OFF    //Two-speed Oscillator Start-up Enable bit->Start up with user-selected oscillator source
 
 // FOSC
+#ifdef EXT_CRYSTAL
+#pragma config POSCMD = HS    //Primary Oscillator Mode Select bits->HS Crystal Oscillator Mode
+#else
 #pragma config POSCMD = NONE    //Primary Oscillator Mode Select bits->HS Crystal Oscillator Mode
+#endif
+
 #pragma config OSCIOFCN = ON    //OSC2 Pin Function bit->OSC2 is general purpose digital I/O pin
 #pragma config SOSCSEL = OFF    //SOSC Power Selection Configuration bits->Digital (SCLKI) mode
 #pragma config PLLSS = PLL_PRI    //PLL Secondary Selection Configuration bit->PLL is fed by the Primary oscillator

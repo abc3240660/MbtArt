@@ -34,6 +34,7 @@ static unsigned long MobitTimesT3 = 0UL;// unit: ms
 // ---------------------- global variables -------------------- //
 // --
 extern u8 g_ring_times;
+extern u32 g_led_times;
 
 //******************************************************************************
 //* Timer 1
@@ -46,7 +47,7 @@ void Configure_Tick1(void)
 
     // Fcy = Fosc/2 = 16M
     // 250*(1/(16M/64)) = 250*4us = 1ms
-    PR1 = 250;                // Load the period value
+    PR1 = 500;                // Load the period value
 
     IPC0bits.T1IP = IPL_MID;  // Set Timer1 Interrupt Priority Level
     IFS0bits.T1IF = 0;        // Clear Timer1 Interrupt Flag
@@ -98,6 +99,7 @@ void Configure_Tick3(void)
 
 void Enable_Tick1(void)
 {
+	return;
     TMR1 = 0x00;              // Clear timer register
     PR1 = 250;                // Load the period value
     T1CONbits.TON = 1;
@@ -105,11 +107,13 @@ void Enable_Tick1(void)
 
 void Disable_Tick1(void)
 {
+	return;
     T1CONbits.TON = 0;
 }
 
 void Enable_Tick2(void)
 {
+	return;
     TMR2 = 0x00;              // Clear timer register
     PR2 = 2500;               // Load the period value
     T2CONbits.TON = 1;
@@ -117,12 +121,14 @@ void Enable_Tick2(void)
 
 void Disable_Tick2(void)
 {
+	return;
     T2CONbits.TON = 0;
 }
 
 
 void Enable_Tick3(void)
 {
+	return;
     TMR3 = 0x00;              // Clear timer register
     PR3 = 25000;              // Load the period value
     T3CONbits.TON = 1;
@@ -130,6 +136,7 @@ void Enable_Tick3(void)
 
 void Disable_Tick3(void)
 {
+	return;
     T3CONbits.TON = 0;
 }
 
@@ -256,6 +263,20 @@ void __attribute__((__interrupt__, no_auto_psv)) _T2Interrupt(void)
     }
 #endif
 
+    if (g_led_times > 0) {
+        if (g_led_times < 10) {
+            g_led_times = 0;
+        } else {
+            g_led_times -= 10;// TM2 Unit = 10ms
+        }
+    }
+    
+    if (0 == g_led_times) {
+        SetLedsStatus(MAIN_LED_B, LED_OFF);
+        SetLedsStatus(MAIN_LED_G, LED_OFF);
+        SetLedsStatus(MAIN_LED_R, LED_OFF);
+    }
+
     if (0 == MobitTimesT2%1000) {
         DEBUG("T2 10s...\n");
     }
@@ -345,15 +366,15 @@ unsigned long GetTimeStamp()
 bool isDelayTimeout(unsigned long start_time,unsigned long delayms)
 {
     // delay at least 1ms
-    if(delayms < 1){
-        delayms = 1;
+    if(delayms < 2){
+        delayms = 2;
     }
     if(MobitTimesT1 >= start_time){
-        if((MobitTimesT1 - start_time) > delayms){
+        if((MobitTimesT1 - start_time) > delayms/2){
             return 1;
         }
     }else{
-        if((10000000UL-start_time+MobitTimesT1) > delayms){
+        if((10000000UL-start_time+MobitTimesT1) > delayms/2){
             printf("Timer1 Overload...\n");
             return 1;
         }

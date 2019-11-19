@@ -257,6 +257,7 @@ void LEDs_Ctrl(LED_INDEX led_id,LED_STA led_sta)
 
 void LockSwitch_Init(void)
 {
+    _ANSE4 = 0;
     // Default HW Pull Up
     GPIOx_Config(BANKE, 4, INPUT_DIR);
 }
@@ -412,10 +413,10 @@ void Charge_Disable(void)
 u8 Charge_InsertDetect(void)
 {
     if (!GPIOx_Input(BANKF, 2)) {
-        printf("Charge Status Level = 0 -> Charging Mode...\n");
+        DEBUG("Charge Status Level = 0 -> Charging Mode...\n");
         return 1;// charging mode
     } else {
-        printf("Charge Status Level = 1 -> Normal Mode...\n");
+        DEBUG("Charge Status Level = 1 -> Normal Mode...\n");
         return 0;// normal mode
     }
 }

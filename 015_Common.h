@@ -233,6 +233,8 @@ typedef struct {
 
 #define OSC_32M_USE 1
 
+// #define EXT_CRYSTAL 1
+
 #define __DEBUG 1
 
 #ifdef __DEBUG

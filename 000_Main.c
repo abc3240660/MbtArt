@@ -25,13 +25,14 @@
 #include "012_CLRC663_NFC.h"
 #include "019_ADC0.h"
 
-#define TESTVER "11150915V7"
+#define TESTVER "11182250"
 
 // static u8 is_mode_nb = 0;
 static u32 start_time_nfc = 0;
 static u8 gs_charge_sta = 0;
+static u8 gs_got_card = 0;
 
-u8 g_led_times = 0;
+u32 g_led_times = 0;
 u8 g_ring_times = 0;
 
 // 0-normal 1-move interrupt
@@ -61,7 +62,13 @@ void SwitchToLowClock(void)
 void SwitchToNormalClock(void)
 {
     _GIE = 0;
+
+#ifdef EXT_CRYSTAL
+    __builtin_write_OSCCONH(3);// PRIPLL
+#else
     __builtin_write_OSCCONH(1);// FRCPLL
+#endif
+
     __builtin_write_OSCCONL(1);// 32KHz change to 32MHz
     while(OSCCONbits.OSWEN);
     _GIE = 1;
@@ -95,46 +102,38 @@ int main(void)
 
     System_Config();
 
-#if 0    
-    // Close power consumption
-    Beep_Init();
-    CLRC663_PowerOff();
-    PowerOffBG96Module();
-
-    // Enter into sleep
-    delay_ms_nop(100);
-    ExtIntr2_Enable();
-    SwitchToLowClock();
-    EnterToSleep();
-
-    // TypeC intr will wake up sleep
-    ExtIntr2_Disable();
-    SwitchToNormalClock();
-#endif
-
     Uart1_Init();
-    DEBUG("ART Application running...\r\n");
-
 	Uart3_Init();
     Uart4_Init();
 
     delay_ms_nop(100);
+    
+    DEBUG("ART Application running...\r\n");
+
+#if 0// TypeC Check
+    while (1) {
+        if (Charge_InsertDetect()) {
+            break;
+        }
+
+        delay_ms_nop(2000);
+    }
+#endif
 
     // If TypeC-Power detect, beep*1
     g_ring_times = 1;
-    Configure_Tick1();// 1ms
-    Configure_Tick2();// 50ms
-    delay_ms_nop(31);
+    Configure_Tick1();
+    Configure_Tick2();
 
-#if 1
+    Beep_Init();
+    // PowerOffBG96Module();
+
     LEDs_Init();
     Charge_Init();
     LB1938_Init();
     LockSwitch_Init();
 
-    CLRC663_PowerUp();
-#endif
-
+    // CLRC663_PowerUp();
     BNO055_PowerUp();
 
 #if 0// Orange
@@ -146,15 +145,16 @@ int main(void)
     SetLedsMode(MAIN_LED_P, LED_BLINK);
     SetLedsStatus(MAIN_LED_P, LED_ON);
 #endif
-
 #if 1// BNO055 Testing
-    delay_ms(2000);
 	BNO055_init();
+
+#if 0
 	if (0 == bno055_get_euler(&cur_pitch, &cur_yaw, &cur_roll)) {
 		DEBUG("Euler Base: %f %f %f\n", (double)cur_pitch, (double)cur_yaw, (double)cur_roll);
 	} else {
 		DEBUG("Get base eurl failed \n");
     }
+#endif
 
     ExtIntr_Initialize();
     bno055_clear_int();// clear INT
@@ -209,9 +209,10 @@ int main(void)
         if (1 == nfc_enable) {
             if (0 == start_time_nfc) {
                 DEBUG("start_time_nfc ...\n");
-                g_ring_times = 6;
+                g_ring_times = 2;
+                g_led_times = 10000;
+                SetLedsStatus(MAIN_LED_P, LED_ON);
                 Enable_Tick2();
-                SetLedsStatus(MAIN_LED_B, LED_ON);
                 start_time_nfc = GetTimeStamp();
             }
 
@@ -219,7 +220,17 @@ int main(void)
                 if (isDelayTimeout(start_time_nfc,nfc_time*1000UL)) {
                     nfc_enable = 0;
                     DEBUG("nfc_enable = 0\n");
-                    SetLedsStatus(MAIN_LED_B, LED_OFF);
+
+                    g_ring_times = 3;
+                    Enable_Tick2();
+
+                    g_led_times = 0;
+                    delay_ms(15);
+
+                    g_led_times = 5000;
+                    SetLedsStatus(MAIN_LED_R, LED_ON);
+                    // SetLedsStatus(MAIN_LED_G, LED_OFF);
+                    // SetLedsStatus(MAIN_LED_B, LED_OFF);
                 }
             }
         } else {
@@ -238,23 +249,22 @@ int main(void)
         // --
         // ---------------------- TASK 2 -------------------- //
         // --
-        if (0 == (task_cnt%11)) {  // every 0.5s
+        if (0 == (task_cnt%22)) {  // every 0.5s
             if (nfc_enable) {
                 DEBUG("before ReadMobibNFCCard\n");
-                if (ReadMobibNFCCard()) {
-                    g_ring_times = 6;
+                if (0 == ReadMobibNFCCard()) {
+                    g_ring_times = 1;
                     Enable_Tick2();
 
                     LB1938_OpenLock();
 
-                    g_led_times = 6;
-                    SetLedsStatus(MAIN_LED_G, LED_ON);
-                } else {
-                    g_ring_times = 6;
-                    Enable_Tick2();
+                    g_led_times = 0;
+                    delay_ms(15);
 
-                    g_led_times = 6;
-                    SetLedsStatus(MAIN_LED_R, LED_ON);
+                    g_led_times = 3000;
+                    SetLedsStatus(MAIN_LED_G, LED_ON);
+
+                    nfc_enable = 0;
                 }
                 DEBUG("after ReadMobibNFCCard\n");
             }
@@ -277,65 +287,46 @@ int main(void)
                 if (!nfc_enable) {
                     if (intr_type&0x80) {
                         bno055_mode = 1;// During Low Power Mode
-
-                        Disable_Tick1();
                         Disable_Tick2();
 
+                        CLRC663_PowerOff();
                         DEBUG("Enter low power %s\n", TESTVER);
                         bno055_enter_lower_mode();
-    #if 1
-                        // delay_ms(500);
-                        // bno055_clear_int();
+
                         if (0 == GetBNOIntrFlag()) {
-    #if 0
-                            PMD1 = 0xFF;
-                            PMD2 = 0xFF;
-                            PMD3 = 0xFF;
-                            PMD4 = 0xFF;
-                            PMD5 = 0xFF;
-                            PMD6 = 0xFF;
-                            PMD7 = 0xFF;
-                            PMD8 = 0xFF;
-    #endif
-                            _GIE = 0;
-                            __builtin_write_OSCCONH(5);// LPRC
-                            __builtin_write_OSCCONL(1);// 32MHz change to 32KHz
-                            while(OSCCONbits.OSWEN);
-                            _GIE = 1;
+                            SwitchToLowClock();
 
                             Sleep();
                             Nop();
 
+#if 0
                             LEDs_Ctrl(MAIN_LED_G, LED_ON);
                             delay_us_nop(100);
                             LEDs_Ctrl(MAIN_LED_G, LED_OFF);
+#endif
 
-                            _GIE = 0;
-                            __builtin_write_OSCCONH(1);// FRCPLL
-                            __builtin_write_OSCCONL(1);// 32KHz change to 32MHz
-                            while(OSCCONbits.OSWEN);
-                            _GIE = 1;
+                            SwitchToNormalClock();
 
+                            // Enable_Tick1();
                             DEBUG("Wake Up...\r\n");
                         } else {
                             DEBUG("Intr happen again...\n");
                         }
 
-                        Enable_Tick1();
                         Enable_Tick2();
-    #else
-                        if (0 == GetBNOIntrFlag()) {
-                            Sleep();
-                            Nop();
-                        } else {
-                            DEBUG("Intr happen again...\n");
-                        }
-    #endif
                     } else if (intr_type&0x40) {
                         DEBUG("Enter normal %s\n", TESTVER);
                         bno055_enter_normal_mode();//
                         bno055_mode = 0;// During Normal Mode
-                        nfc_enable = 1;
+
+                        if (!IsLockSwitchOpen()) {
+                            CLRC663_PowerUp();
+                            nfc_enable = 1;
+                            DEBUG("Ready to read NFC...\n");
+                        } else {
+                            CLRC663_PowerOff();
+                            DEBUG("Lock is already open.\n");
+                        }
                     }
                 }
             } else if (0 == bno055_mode) {//

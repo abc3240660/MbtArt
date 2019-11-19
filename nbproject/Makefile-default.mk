@@ -263,7 +263,7 @@ dist/${CND_CONF}/${IMAGE_TYPE}/MbtArt.${IMAGE_TYPE}.${OUTPUT_SUFFIX}: ${OBJECTFI
 	${MP_CC_DIR}\\xc16-bin2hex dist/${CND_CONF}/${IMAGE_TYPE}/MbtArt.${IMAGE_TYPE}.${DEBUGGABLE_SUFFIX} -a  -omf=elf  
 	
 	@echo Normalizing hex file
-	@"C:/Program Files (x86)/Microchip/MPLABX/v5.10/mplab_platform/platform/../mplab_ide/modules/../../bin/hexmate" --edf="C:/Program Files (x86)/Microchip/MPLABX/v5.10/mplab_platform/platform/../mplab_ide/modules/../../dat/en_msgs.txt" dist/${CND_CONF}/${IMAGE_TYPE}/MbtArt.${IMAGE_TYPE}.hex -odist/${CND_CONF}/${IMAGE_TYPE}/MbtArt.${IMAGE_TYPE}.hex
+	@"C:/Program Files (x86)/Microchip/MPLABX/v5.20/mplab_platform/platform/../mplab_ide/modules/../../bin/hexmate" --edf="C:/Program Files (x86)/Microchip/MPLABX/v5.20/mplab_platform/platform/../mplab_ide/modules/../../dat/en_msgs.txt" dist/${CND_CONF}/${IMAGE_TYPE}/MbtArt.${IMAGE_TYPE}.hex -odist/${CND_CONF}/${IMAGE_TYPE}/MbtArt.${IMAGE_TYPE}.hex
 
 endif
 

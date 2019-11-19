@@ -66,7 +66,7 @@ void ExtIntr_Initialize(void)
 
 void bno_055_delay_ms(u32 ms)
 {
-    delay_ms_nop((u16)(ms)*2);
+    delay_ms((u16)(ms)*2);
 }
 
 void bno055_send_chars(u8 *data, int len)
@@ -1068,22 +1068,24 @@ u16 Configure_BNO055(void)
 
 u16 BNO055_init(void)
 {
+    delay_ms(2000);
     Configure_BNO055();
-
-    // bno055_clear_int();
 
     return 0;
 }
 
 void BNO055_PowerUp(void)
 {    
+    GPIOx_Pull(BANKC, 13, PULL_UP);
+    GPIOx_Pull(BANKC, 14, PULL_UP);
     GPIOx_Config(BANKC, 13, OUTPUT_DIR);// BNO055 
     GPIOx_Config(BANKC, 14, OUTPUT_DIR);// BNO055
     GPIOx_Output(BANKC, 14, 1);// nTILT_BOOT_LOAD
    
-    delay_ms_nop(100);
+    GPIOx_Output(BANKC, 13, 1);// nTILT_RST
+    delay_ms(200);
     GPIOx_Output(BANKC, 13, 0);// nTILT_RST
-    delay_ms_nop(100);
+    delay_ms(200);
     GPIOx_Output(BANKC, 13, 1);// nTILT_RST
 }
 
