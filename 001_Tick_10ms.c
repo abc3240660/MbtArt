@@ -38,7 +38,7 @@ extern u32 g_led_times;
 
 //******************************************************************************
 //* Timer 1
-//* Timer to make 1ms Tick
+//* Timer to make 2ms Tick
 //******************************************************************************
 void Configure_Tick1(void)
 {
@@ -375,7 +375,7 @@ bool isDelayTimeout(unsigned long start_time,unsigned long delayms)
         }
     }else{
         if((10000000UL-start_time+MobitTimesT1) > delayms/2){
-            printf("Timer1 Overload...\n");
+            DEBUG("Timer1 Overload...\n");
             return 1;
         }
     }
