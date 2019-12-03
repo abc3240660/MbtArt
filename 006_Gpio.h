@@ -62,6 +62,7 @@ typedef enum {
 void GPIOx_Config(GPIO_BANKx port, u8 pin, GPIO_DIR dir);
 void GPIOx_Output(GPIO_BANKx port, u8 pin, u8 value);
 u8 GPIOx_Input(GPIO_BANKx port, u8 pin);
+void GPIOx_Pull(GPIO_BANKx port, u8 pin, GPIO_PUL value);
 u8 GetLedsStatus(LED_INDEX led_id);
 void SetLedsStatus(LED_INDEX led_id, LED_STA led_sta);
 

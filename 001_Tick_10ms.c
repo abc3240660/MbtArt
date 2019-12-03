@@ -70,7 +70,7 @@ void Configure_Tick2(void)
     // 2500*(1/(16M/64)) = 2500*4us = 10ms
     PR2 = 2500;               // Load the period value
 
-    IPC1bits.T2IP = IPL_LOW;  // Set Timer2 Interrupt Priority Level
+    IPC1bits.T2IP = IPL_MID;  // Set Timer2 Interrupt Priority Level
     IFS0bits.T2IF = 0;        // Clear Timer2 Interrupt Flag
     IEC0bits.T2IE = 1;        // Enable Timer2 interrupt
     T2CONbits.TON = 1;        // Start Timer
@@ -141,7 +141,7 @@ void Disable_Tick3(void)
 }
 
 //******************************************************************************
-//* Timer 1 IRQ: 1ms
+//* Timer 1 IRQ: 2ms
 //******************************************************************************
 void __attribute__((__interrupt__, no_auto_psv)) _T1Interrupt(void)
 {

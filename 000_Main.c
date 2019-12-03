@@ -50,7 +50,7 @@ static void PowerOffBG96Module(void)
     GPIOx_Output(BANKB, 9, 0);// release to default SI2302 HIGH
 }
 
-void SwitchToLowClock(void)
+static void SwitchToLowClock(void)
 {
     _GIE = 0;
     __builtin_write_OSCCONH(5);// LPRC
@@ -59,7 +59,7 @@ void SwitchToLowClock(void)
     _GIE = 1;
 }
 
-void SwitchToNormalClock(void)
+static void SwitchToNormalClock(void)
 {
     _GIE = 0;
 
@@ -74,7 +74,7 @@ void SwitchToNormalClock(void)
     _GIE = 1;
 }
 
-void EnterToSleep(void)
+static void EnterToSleep(void)
 {
     Sleep();
     Nop();

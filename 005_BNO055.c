@@ -37,7 +37,7 @@ void ClearBNOIntrFlag(void)
 
 void __attribute__ ((weak)) EX_INT1_CallBack(void)
 {
-    // printf("!!!!!!!!!!!!!!!!!!!!!!!INT occur \n");
+    // DEBUG("!!!!!!!!!!!!!!!!!!!!!!!INT occur \n");
     bno055_int_flag = 1;
 }
 

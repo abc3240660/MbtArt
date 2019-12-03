@@ -70,7 +70,7 @@ void ADC0_Init(void)
 
 bool ADC0_GetValue(u32 *value)
 {
-    u8 trycnt = 30;
+    int trycnt = 30;
     u16 reg_val = 0;
 
     while (trycnt--) {

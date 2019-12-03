@@ -260,6 +260,10 @@ void LockSwitch_Init(void)
     _ANSE4 = 0;
     // Default HW Pull Up
     GPIOx_Config(BANKE, 4, INPUT_DIR);
+
+    // _ANSF5 = 0;
+    // Default HW Pull Up ???
+    GPIOx_Config(BANKF, 5, INPUT_DIR);
 }
 
 u8 IsLockSwitchOpen(void)
